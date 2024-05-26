@@ -1,0 +1,79 @@
+% Define the size of the farmland
+farmland_size_sqm = 202300; % in square meters
+
+% Number of sensors for each type
+num_sensors = 25;
+
+% Generate random coordinates for all sensors
+all_sensors_x = rand(1, num_sensors * 3) * farmland_size_sqm;
+all_sensors_y = rand(1, num_sensors * 3) * farmland_size_sqm;
+
+% Plot all sensors
+figure;
+hold on;
+
+% Plot soil sensors
+scatter(all_sensors_x(1:num_sensors), all_sensors_y(1:num_sensors), 50, 'g', 'filled');
+
+% Plot moisture sensors
+scatter(all_sensors_x(num_sensors+1:2*num_sensors), all_sensors_y(num_sensors+1:2*num_sensors), 50, 'b', 'filled');
+
+% Plot crop health sensors
+scatter(all_sensors_x(2*num_sensors+1:end), all_sensors_y(2*num_sensors+1:end), 50, 'r', 'filled');
+
+xlabel('X Coordinate (m)');
+ylabel('Y Coordinate (m)');
+title('Sensor Locations');
+grid on;
+
+% Plot base station (outside the field)
+base_station_x = -100; % 100 meters away from the boundary
+base_station_y = -100;
+
+% Plot base station
+scatter(base_station_x, base_station_y, 100, 'k', 'filled');
+legend('Soil Sensors', 'Moisture Sensors', 'Crop Health Sensors', 'Base Station');
+
+% Drone starts from the base station
+current_x = base_station_x;
+current_y = base_station_y;
+
+% Initialize animation frames
+frames = struct('cdata', [], 'colormap', []);
+
+% Visit all sensors without revisiting any node
+total_distance = 0;
+
+% Visit all sensors
+for i = 1:num_sensors * 3
+    % Calculate distance to current sensor
+    distance_to_sensor = sqrt((current_x - all_sensors_x(i))^2 + (current_y - all_sensors_y(i))^2);
+    total_distance = total_distance + distance_to_sensor;
+    
+    % Plot drone movement to the sensor
+    plot([current_x, all_sensors_x(i)], [current_y, all_sensors_y(i)], 'm', 'LineWidth', 2); % Magenta color for drone path
+    drawnow;
+    frames(i) = getframe(gcf);
+    
+    % Update current position
+    current_x = all_sensors_x(i);
+    current_y = all_sensors_y(i);
+end
+
+% Return to the base station
+plot([current_x, base_station_x], [current_y, base_station_y], 'm', 'LineWidth', 2); % Magenta color for drone path
+drawnow;
+frames(num_sensors * 3 + 1) = getframe(gcf);
+
+% Calculate total distance traveled
+total_distance_km = total_distance / 1000; % Convert meters to kilometers
+fprintf('Total distance traveled by the drone: %.2f kilometers\n', total_distance_km);
+
+% Calculate estimated time taken
+drone_speed = 34.8; % meters per second (adjust according to your drone's speed)
+time_taken_seconds = total_distance / drone_speed;
+time_taken_minutes = time_taken_seconds / 60; % Convert seconds to minutes
+fprintf('Estimated time taken by the drone: %.2f minutes\n', time_taken_minutes);
+
+% Animation playback
+movie(frames, 1, 5);
